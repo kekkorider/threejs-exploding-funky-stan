@@ -2,16 +2,14 @@ import { Scene } from 'three/src/scenes/Scene'
 import { WebGLRenderer } from 'three/src/renderers/WebGLRenderer'
 import { PerspectiveCamera } from 'three/src/cameras/PerspectiveCamera'
 import { BoxBufferGeometry } from 'three/src/geometries/BoxBufferGeometry'
-import { MeshStandardMaterial } from 'three/src/materials/MeshStandardMaterial'
 import { ShaderMaterial } from 'three/src/materials/ShaderMaterial'
-import { Mesh } from 'three/src/objects/Mesh'
-import { PointLight } from 'three/src/lights/PointLight'
 import { Color } from 'three/src/math/Color'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-
-// Remove this if you don't need to load any 3D model
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
+import { Clock } from 'three/src/core/clock'
+import { Mesh } from 'three/src/objects/Mesh'
+import { BufferAttribute } from 'three/src/core/BufferAttribute'
 
 import Tweakpane from 'tweakpane'
 
@@ -26,18 +24,25 @@ class App {
     this._createScene()
     this._createCamera()
     this._createRenderer()
-    this._createBox()
-    this._createShadedBox()
-    this._createLight()
     this._addListeners()
+    this._createBox()
     this._createControls()
     this._createDebugPanel()
+    this._createClock()
 
-    this._loadModel().then(() => {
-      this.renderer.setAnimationLoop(() => {
-        this._update()
-        this._render()
-      })
+    // this._loadModel().then(() => {
+    //   console.log(this)
+    //   this.renderer.setAnimationLoop(() => {
+    //     this._update()
+    //     this._render()
+    //   })
+    // })
+
+    console.log(this)
+
+    this.renderer.setAnimationLoop(() => {
+      this._update()
+      this._render()
     })
   }
 
@@ -47,11 +52,11 @@ class App {
   }
 
   _update() {
-    this.box.rotation.y += 0.01
-    this.box.rotation.z += 0.006
+    // this.mesh.material.uniforms.uTime.value = this.clock.getElapsedTime()
+    // this.mesh.material.uniformsNeedUpdate = true
 
-    this.shadedBox.rotation.y += 0.01
-    this.shadedBox.rotation.z += 0.006
+    this.box.material.uniforms.uTime.value = this.clock.getElapsedTime()
+    this.box.material.uniformsNeedUpdate = true
   }
 
   _render() {
@@ -64,7 +69,7 @@ class App {
 
   _createCamera() {
     this.camera = new PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 0.1, 100)
-    this.camera.position.set(-4, 4, 10)
+    this.camera.position.set(0, 0, 2)
   }
 
   _createRenderer() {
@@ -82,52 +87,49 @@ class App {
     this.renderer.physicallyCorrectLights = true
   }
 
-  _createLight() {
-    this.pointLight = new PointLight(0xff0055, 500, 100, 2)
-    this.pointLight.position.set(0, 10, 13)
-    this.scene.add(this.pointLight)
-  }
-
-  /**
-   * Create a box with a PBR material
-   */
   _createBox() {
-    const geometry = new BoxBufferGeometry(1, 1, 1, 1, 1, 1)
+    const geom = new BoxBufferGeometry(1, 1, 1, 10, 10, 10).toNonIndexed()
 
-    const material = new MeshStandardMaterial({ color: 0xffffff })
+    const centroid = new Float32Array(geom.getAttribute('position').count*3)
+    const position = geom.getAttribute('position').array
+    for (let i = 0; i < centroid.length; i+=9) {
+      const x = (position[i] + position[i+3] + position[i+6]) / 3
+      const y = (position[i+1] + position[i+1+3] + position[i+1+6]) / 3
+      const z = (position[i+2] + position[i+2+3] + position[i+2+6]) / 3
 
-    this.box = new Mesh(geometry, material)
+      centroid.set([x, y, z], i);
+      centroid.set([x, y, z], i+1);
+      centroid.set([x, y, z], i+2);
+    }
+    geom.setAttribute('aCentroid', new BufferAttribute(centroid, 3, false))
 
-    this.box.scale.x = 4
-    this.box.scale.y = 4
-    this.box.scale.z = 4
-
-    this.box.position.x = -5
-
+    const mat = this._getShaderMaterial()
+    this.box = new Mesh(geom, mat)
     this.scene.add(this.box)
   }
 
-  /**
-   * Create a box with a custom ShaderMaterial
-   */
-  _createShadedBox() {
-    const geometry = new BoxBufferGeometry(1, 1, 1, 1, 1, 1)
-
-    const material = new ShaderMaterial({
-      vertexShader: require('./shaders/sample.vertex.glsl'),
-      fragmentShader: require('./shaders/sample.fragment.glsl'),
-      transparent: true
+  _getShaderMaterial() {
+    return new ShaderMaterial({
+      vertexShader: require('./shaders/effect.vertex.glsl'),
+      fragmentShader: require('./shaders/effect.fragment.glsl'),
+      transparent: true,
+      wireframe: false,
+      side: 2, // THREE:DoubleSide
+      uniforms: {
+        uDistortionPosition: {
+          type: '1f',
+          value: 0
+        },
+        uDistortionAmount: {
+          type: '1f',
+          value: 0
+        },
+        uTime: {
+          type: '1f',
+          value: 0
+        }
+      }
     })
-
-    this.shadedBox = new Mesh(geometry, material)
-
-    this.shadedBox.scale.x = 4
-    this.shadedBox.scale.y = 4
-    this.shadedBox.scale.z = 4
-
-    this.shadedBox.position.x = 5
-
-    this.scene.add(this.shadedBox)
   }
 
   /**
@@ -143,24 +145,11 @@ class App {
       this.loader.setDRACOLoader(dracoLoader)
 
       this.loader.load('./model.glb', gltf => {
-        const mesh = gltf.scene.children[0]
+        this.scene.add(gltf.scene)
 
-        mesh.scale.x = 4
-        mesh.scale.y = 4
-        mesh.scale.z = 4
+        this.mesh = gltf.scene.children[0]
 
-        mesh.position.z = 5
-
-        const material = new ShaderMaterial({
-          vertexShader: require('./shaders/sample.vertex.glsl'),
-          fragmentShader: require('./shaders/sample.fragment.glsl'),
-          transparent: true,
-          wireframe: true
-        })
-
-        mesh.material = material
-
-        this.scene.add(mesh)
+        this.mesh.material = this._getShaderMaterial()
 
         resolve()
       })
@@ -169,6 +158,10 @@ class App {
 
   _createControls() {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
+  }
+
+  _createClock() {
+    this.clock = new Clock()
   }
 
   _createDebugPanel() {
@@ -186,52 +179,27 @@ class App {
     })
 
     /**
-     * Box configuration
+     * Distortion configuration
      */
-    const boxFolder = this.pane.addFolder({ title: 'Box' })
-
-    params = { width: 4, height: 4, depth: 4, metalness: 0.5, roughness: 0.5 }
-
-    boxFolder.addInput(params, 'width', { label: 'Width', min: 1, max: 8 })
-      .on('change', value => {
-        this.box.scale.x = value
-        this.shadedBox.scale.x = value
-      })
-
-    boxFolder.addInput(params, 'height', { label: 'Height', min: 1, max: 8 })
-      .on('change', value => {
-        this.box.scale.y = value
-        this.shadedBox.scale.y = value
-      })
-
-    boxFolder.addInput(params, 'depth', { label: 'Depth', min: 1, max: 8 })
-      .on('change', value => {
-        this.box.scale.z = value
-        this.shadedBox.scale.z = value
-      })
-
-    boxFolder.addInput(params, 'metalness', { label: 'Metallic', min: 0, max: 1 })
-      .on('change', value => this.box.material.metalness = value)
-
-    boxFolder.addInput(params, 'roughness', { label: 'Roughness', min: 0, max: 1 })
-      .on('change', value => this.box.material.roughness = value)
-
-    /**
-     * Light configuration
-     */
-    const lightFolder = this.pane.addFolder({ title: 'Light' })
+    const distortionFolder = this.pane.addFolder({ title: 'Distortion' })
 
     params = {
-      color: { r: 255, g: 0, b: 85 },
-      intensity: 500
+      distortionPosition: 0,
+      distortionAmount: 0
     }
 
-    lightFolder.addInput(params, 'color', { label: 'Color' }).on('change', value => {
-      this.pointLight.color = new Color(`rgb(${parseInt(value.r)}, ${parseInt(value.g)}, ${parseInt(value.b)})`)
+    distortionFolder.addInput(params, 'distortionPosition', { label: 'Position', min: -1, max: 1 }).on('change', value => {
+      // this.mesh.material.uniforms.uDistortionPosition.value = value
+      // this.mesh.material.uniformsNeedUpdate = true
+      this.box.material.uniforms.uDistortionPosition.value = value
+      this.box.material.uniformsNeedUpdate = true
     })
 
-    lightFolder.addInput(params, 'intensity', { label: 'Intensity', min: 0, max: 1000 }).on('change', value => {
-      this.pointLight.intensity = value
+    distortionFolder.addInput(params, 'distortionAmount', { label: 'Amount', min: 0, max: 1 }).on('change', value => {
+      // this.mesh.material.uniforms.uDistortionAmount.value = value
+      // this.mesh.material.uniformsNeedUpdate = true
+      this.box.material.uniforms.uDistortionAmount.value = value
+      this.box.material.uniformsNeedUpdate = true
     })
   }
 
