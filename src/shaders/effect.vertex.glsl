@@ -12,21 +12,31 @@ mat2 rotate2D(in float angle) {
               sin(angle), cos(angle));
 }
 
+float Hash21(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p+45.32);
+  return fract(p.x * p.y);
+}
+
 void main() {
   vec3 pos = position;
+
+  // float distPos = cos(uTime);
 
   // Make if fatter using `uDistortionPosition`
   float distortion = smoothstep(0.5, 1.0, 1.0 - abs(position.y+uDistortionPosition))*uDistortionAmount;
   // pos.xz *= 1.0 + distortion;
 
-  // vec3 centr = aCentroid;
   vec3 localPos = pos - aCentroid;
-  localPos.xz *= rotate2D(uTime*3.0*distortion);
-  localPos.xy *= rotate2D(uTime*6.0*distortion);
+  float rand = Hash21(aCentroid.xy) + Hash21(aCentroid.yz);
+  localPos.xz *= rotate2D(distortion * 15.0 * uDistortionPosition * rand);
+  localPos.xy *= rotate2D(distortion * 35.0 * uDistortionPosition * rand);
+  localPos.yz *= rotate2D(distortion * -84.0 * uDistortionPosition * rand);
 
   pos = aCentroid + localPos;
   // pos += localPos*max(0.0, distortion);
-  pos.xz *= 1.0 + distortion;
+  // pos.xz *= 1.0 + distortion;
+  pos += aCentroid * rand * distortion;
 
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
