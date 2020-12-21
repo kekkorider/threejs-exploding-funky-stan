@@ -88,7 +88,7 @@ class App {
   }
 
   _createBox() {
-    const geom = new BoxBufferGeometry(1, 1, 1, 10, 10, 10).toNonIndexed()
+    const geom = new BoxBufferGeometry(1, 1, 1, 20, 20, 20).toNonIndexed()
 
     const centroid = new Float32Array(geom.getAttribute('position').count*3)
     const position = geom.getAttribute('position').array
@@ -98,8 +98,8 @@ class App {
       const z = (position[i+2] + position[i+2+3] + position[i+2+6]) / 3
 
       centroid.set([x, y, z], i);
-      centroid.set([x, y, z], i+1);
-      centroid.set([x, y, z], i+2);
+      centroid.set([x, y, z], i+3);
+      centroid.set([x, y, z], i+6);
     }
     geom.setAttribute('aCentroid', new BufferAttribute(centroid, 3, false))
 
@@ -122,7 +122,7 @@ class App {
         },
         uDistortionAmount: {
           type: '1f',
-          value: 0
+          value: 0.2
         },
         uTime: {
           type: '1f',
@@ -185,7 +185,7 @@ class App {
 
     params = {
       distortionPosition: 0,
-      distortionAmount: 0
+      distortionAmount: 0.2
     }
 
     distortionFolder.addInput(params, 'distortionPosition', { label: 'Position', min: -1, max: 1 }).on('change', value => {
@@ -195,7 +195,7 @@ class App {
       this.box.material.uniformsNeedUpdate = true
     })
 
-    distortionFolder.addInput(params, 'distortionAmount', { label: 'Amount', min: 0, max: 1 }).on('change', value => {
+    distortionFolder.addInput(params, 'distortionAmount', { label: 'Amount', min: -0.5, max: 0.5 }).on('change', value => {
       // this.mesh.material.uniforms.uDistortionAmount.value = value
       // this.mesh.material.uniformsNeedUpdate = true
       this.box.material.uniforms.uDistortionAmount.value = value
