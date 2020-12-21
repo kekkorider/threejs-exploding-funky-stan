@@ -25,7 +25,8 @@ class App {
     this._createCamera()
     this._createRenderer()
     this._addListeners()
-    this._createBox()
+    this._createWireframeBox()
+    this._createFillBox()
     this._createControls()
     this._createDebugPanel()
     this._createClock()
@@ -52,11 +53,11 @@ class App {
   }
 
   _update() {
-    // this.mesh.material.uniforms.uTime.value = this.clock.getElapsedTime()
-    // this.mesh.material.uniformsNeedUpdate = true
+    this.wireframeBox.material.uniforms.uTime.value = this.clock.getElapsedTime()
+    this.wireframeBox.material.uniformsNeedUpdate = true
 
-    this.box.material.uniforms.uTime.value = this.clock.getElapsedTime()
-    this.box.material.uniformsNeedUpdate = true
+    this.fillBox.material.uniforms.uTime.value = this.clock.getElapsedTime()
+    this.fillBox.material.uniformsNeedUpdate = true
   }
 
   _render() {
@@ -89,9 +90,9 @@ class App {
 
   _createBox() {
     const geom = new BoxBufferGeometry(1, 1, 1, 20, 20, 20).toNonIndexed()
-
     const centroid = new Float32Array(geom.getAttribute('position').count*3)
     const position = geom.getAttribute('position').array
+
     for (let i = 0; i < centroid.length; i+=9) {
       const x = (position[i] + position[i+3] + position[i+6]) / 3
       const y = (position[i+1] + position[i+1+3] + position[i+1+6]) / 3
@@ -101,17 +102,58 @@ class App {
       centroid.set([x, y, z], i+3);
       centroid.set([x, y, z], i+6);
     }
+
     geom.setAttribute('aCentroid', new BufferAttribute(centroid, 3, false))
 
-    const mat = this._getShaderMaterial()
-    this.box = new Mesh(geom, mat)
-    this.scene.add(this.box)
+    return geom
   }
 
-  _getShaderMaterial() {
+  _createWireframeBox() {
+    const geom = this._createBox()
+    const mat = this._getWireframeMaterial()
+
+    this.wireframeBox = new Mesh(geom, mat)
+    // this.wireframeBox.position.x = -1
+    this.scene.add(this.wireframeBox)
+  }
+
+  _createFillBox() {
+    const geom = this._createBox()
+    const mat = this._getFillMaterial()
+
+    this.fillBox = new Mesh(geom, mat)
+    // this.fillBox.position.x = 1
+    this.scene.add(this.fillBox)
+  }
+
+  _getWireframeMaterial() {
     return new ShaderMaterial({
       vertexShader: require('./shaders/effect.vertex.glsl'),
-      fragmentShader: require('./shaders/effect.fragment.glsl'),
+      fragmentShader: require('./shaders/wireframe.fragment.glsl'),
+      transparent: true,
+      wireframe: true,
+      side: 2, // THREE:DoubleSide
+      uniforms: {
+        uDistortionPosition: {
+          type: '1f',
+          value: 0
+        },
+        uDistortionAmount: {
+          type: '1f',
+          value: 0.2
+        },
+        uTime: {
+          type: '1f',
+          value: 0
+        }
+      }
+    })
+  }
+
+  _getFillMaterial() {
+    return new ShaderMaterial({
+      vertexShader: require('./shaders/effect.vertex.glsl'),
+      fragmentShader: require('./shaders/fill.fragment.glsl'),
       transparent: true,
       wireframe: false,
       side: 2, // THREE:DoubleSide
@@ -149,7 +191,7 @@ class App {
 
         this.mesh = gltf.scene.children[0]
 
-        this.mesh.material = this._getShaderMaterial()
+        this.mesh.material = this._getWireframeMaterial()
 
         resolve()
       })
@@ -189,17 +231,19 @@ class App {
     }
 
     distortionFolder.addInput(params, 'distortionPosition', { label: 'Position', min: -1, max: 1 }).on('change', value => {
-      // this.mesh.material.uniforms.uDistortionPosition.value = value
-      // this.mesh.material.uniformsNeedUpdate = true
-      this.box.material.uniforms.uDistortionPosition.value = value
-      this.box.material.uniformsNeedUpdate = true
+      this.wireframeBox.material.uniforms.uDistortionPosition.value = value
+      this.wireframeBox.material.uniformsNeedUpdate = true
+
+      this.fillBox.material.uniforms.uDistortionPosition.value = value
+      this.fillBox.material.uniformsNeedUpdate = true
     })
 
     distortionFolder.addInput(params, 'distortionAmount', { label: 'Amount', min: -0.5, max: 0.5 }).on('change', value => {
-      // this.mesh.material.uniforms.uDistortionAmount.value = value
-      // this.mesh.material.uniformsNeedUpdate = true
-      this.box.material.uniforms.uDistortionAmount.value = value
-      this.box.material.uniformsNeedUpdate = true
+      this.wireframeBox.material.uniforms.uDistortionAmount.value = value
+      this.wireframeBox.material.uniformsNeedUpdate = true
+
+      this.fillBox.material.uniforms.uDistortionAmount.value = value
+      this.fillBox.material.uniformsNeedUpdate = true
     })
   }
 

@@ -10,5 +10,5 @@ void main() {
 
   vec3 color = mix(color1, color2, smoothstep(0.0, 0.6, alpha));
 
-  gl_FragColor = vec4(color, 1.0);
+  gl_FragColor = vec4(color*alpha, 1.0);
 }
