@@ -7,7 +7,7 @@ import { Vector2 } from 'three/src/math/Vector2'
 // import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
-import { Clock } from 'three/src/core/clock'
+import { Clock } from 'three/src/core/Clock'
 import { BufferAttribute } from 'three/src/core/BufferAttribute'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
@@ -65,7 +65,7 @@ class App {
 
   _createCamera() {
     this.camera = new PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 0.1, 100)
-    this.camera.position.set(0, 0, 1)
+    this.camera.position.set(0, 0, 1.1)
   }
 
   _createRenderer() {

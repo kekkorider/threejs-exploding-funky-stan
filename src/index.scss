@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   overflow: hidden;
   height: 100vh;
@@ -11,5 +15,26 @@ body {
 
   canvas {
     outline: none;
+  }
+}
+
+#credits {
+  bottom: 0;
+  color: white;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  left: 0;
+  line-height: 1.5;
+  padding: 20px;
+  position: fixed;
+  text-align: center;
+  width: 100%;
+
+  a {
+    color: currentColor;
+    text-decoration: underline;
+
+    &:hover {
+      text-decoration: none;
+    }
   }
 }
