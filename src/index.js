@@ -1,15 +1,17 @@
 import { Scene } from 'three/src/scenes/Scene'
 import { WebGLRenderer } from 'three/src/renderers/WebGLRenderer'
 import { PerspectiveCamera } from 'three/src/cameras/PerspectiveCamera'
-// import { BoxBufferGeometry } from 'three/src/geometries/BoxBufferGeometry'
 import { ShaderMaterial } from 'three/src/materials/ShaderMaterial'
 import { Color } from 'three/src/math/Color'
+import { Vector2 } from 'three/src/math/Vector2'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { Clock } from 'three/src/core/clock'
-// import { Mesh } from 'three/src/objects/Mesh'
 import { BufferAttribute } from 'three/src/core/BufferAttribute'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
 
 import Tweakpane from 'tweakpane'
 
@@ -25,11 +27,10 @@ class App {
     this._createCamera()
     this._createRenderer()
     this._addListeners()
-    // this._createWireframeBox()
-    // this._createFillBox()
     this._createControls()
     this._createDebugPanel()
     this._createClock()
+    this._createPostProcess()
 
     this._loadModel().then(() => {
       this.renderer.setAnimationLoop(() => {
@@ -55,7 +56,7 @@ class App {
   }
 
   _render() {
-    this.renderer.render(this.scene, this.camera)
+    this.composer.render()
   }
 
   _createScene() {
@@ -105,26 +106,6 @@ class App {
 
     geometry.setAttribute('aCentroid', new BufferAttribute(centroid, 3, false))
   }
-
-  // _createWireframeBox() {
-  //   const geom = this._createBox()
-  //   const mat = this._getWireframeMaterial()
-
-  //   this.wireframeBox = new Mesh(geom, mat)
-  //   this.wireframeBox.position.x = -1
-  //   this.wireframeBox.position.z = -1
-  //   this.scene.add(this.wireframeBox)
-  // }
-
-  // _createFillBox() {
-  //   const geom = this._createBox()
-  //   const mat = this._getFillMaterial()
-
-  //   this.fillBox = new Mesh(geom, mat)
-  //   this.fillBox.position.x = -1
-  //   this.fillBox.position.z = -1
-  //   this.scene.add(this.fillBox)
-  // }
 
   _getWireframeMaterial() {
     return new ShaderMaterial({
@@ -228,6 +209,21 @@ class App {
     this.clock = new Clock()
   }
 
+  _createPostProcess() {
+    this.composer = new EffectComposer(this.renderer)
+
+    const renderPass = new RenderPass(this.scene, this.camera)
+    this.composer.addPass(renderPass)
+
+    this.bloomPass = new UnrealBloomPass(
+      new Vector2(window.innerWidth, window.innerHeight),
+      0.7,
+      0.45,
+      0.2
+    )
+    this.composer.addPass(this.bloomPass)
+  }
+
   _createDebugPanel() {
     this.pane = new Tweakpane()
 
@@ -275,6 +271,29 @@ class App {
 
       this.wireframeMesh.material.uniforms.uDistortionThickness.value = value
       this.wireframeMesh.material.uniformsNeedUpdate = true
+    })
+
+    /**
+     * Bloom configuration
+     */
+    const bloomFolder = this.pane.addFolder({ title: 'Bloom' })
+
+    params = {
+      strength: 0.7,
+      threshold: 0.45,
+      radius: 0.2
+    }
+
+    bloomFolder.addInput(params, 'strength', { label: 'Strength', min: 0, max: 1 }).on('change', value => {
+      this.bloomPass.strength = value
+    })
+
+    bloomFolder.addInput(params, 'threshold', { label: 'Threshold', min: 0.1, max: 0.7 }).on('change', value => {
+      this.bloomPass.threshold = value
+    })
+
+    bloomFolder.addInput(params, 'radius', { label: 'Radius', min: 0, max: 1 }).on('change', value => {
+      this.bloomPass.radius = value
     })
   }
 
