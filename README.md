@@ -25,3 +25,7 @@ then open a new browser window and navigate to `http://localhost:1234`
 ```shell
 $ yarn build
 ```
+
+## Credits
+
+The 3D model of Stan Lee is from [de Mravi](https://www.turbosquid.com/it/3d-models/3d-stan-lee-1348558)
