@@ -43,6 +43,9 @@ void main() {
   // Move outside the triangles based on a random value * the distortion.
   pos += aCentroid * rand * distortion;
 
+  // Apply a rotation on the Y axis to the whole mesh.
+  pos.xz *= rotate2D(uTime*0.25 - 1.0);
+
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
   vPosition = position.xy;

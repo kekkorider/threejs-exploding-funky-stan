@@ -4,7 +4,7 @@ import { PerspectiveCamera } from 'three/src/cameras/PerspectiveCamera'
 import { ShaderMaterial } from 'three/src/materials/ShaderMaterial'
 import { Color } from 'three/src/math/Color'
 import { Vector2 } from 'three/src/math/Vector2'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { Clock } from 'three/src/core/clock'
@@ -27,7 +27,7 @@ class App {
     this._createCamera()
     this._createRenderer()
     this._addListeners()
-    this._createControls()
+    // this._createControls()
     this._createDebugPanel()
     this._createClock()
     this._createPostProcess()
@@ -65,7 +65,7 @@ class App {
 
   _createCamera() {
     this.camera = new PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 0.1, 100)
-    this.camera.position.set(0, 0, 2)
+    this.camera.position.set(0, 0, 1)
   }
 
   _createRenderer() {
@@ -78,7 +78,7 @@ class App {
 
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight)
     this.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio))
-    this.renderer.setClearColor(0x121212)
+    this.renderer.setClearColor(0x191919)
     this.renderer.gammaOutput = true
     this.renderer.physicallyCorrectLights = true
   }
@@ -117,7 +117,7 @@ class App {
       uniforms: {
         uDistortionPosition: {
           type: '1f',
-          value: 0
+          value: -0.6
         },
         uDistortionAmount: {
           type: '1f',
@@ -145,7 +145,7 @@ class App {
       uniforms: {
         uDistortionPosition: {
           type: '1f',
-          value: 0
+          value: -0.6
         },
         uDistortionAmount: {
           type: '1f',
@@ -232,7 +232,7 @@ class App {
      */
     const sceneFolder = this.pane.addFolder({ title: 'Scene' })
 
-    let params = { background: { r: 18, g: 18, b: 18 } }
+    let params = { background: { r: 26, g: 26, b: 26 } }
 
     sceneFolder.addInput(params, 'background', { label: 'Background Color' }).on('change', value => {
       this.renderer.setClearColor(new Color(`rgb(${parseInt(value.r)}, ${parseInt(value.g)}, ${parseInt(value.b)})`))
@@ -244,7 +244,7 @@ class App {
     const distortionFolder = this.pane.addFolder({ title: 'Distortion' })
 
     params = {
-      distortionPosition: 0,
+      distortionPosition: -0.6,
       distortionAmount: 0.2,
       distortionThickness: 0.5
     }
