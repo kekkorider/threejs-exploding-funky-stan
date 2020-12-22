@@ -1,8 +1,10 @@
 varying vec2 vPosition;
 varying float vDistortionPosition;
+varying float vDistortionThickness;
 
 uniform float uDistortionPosition;
 uniform float uDistortionAmount;
+uniform float uDistortionThickness;
 uniform float uTime;
 
 attribute vec3 aCentroid;
@@ -21,26 +23,29 @@ float Hash21(vec2 p) {
 void main() {
   vec3 pos = position;
 
-  // float distPos = cos(uTime);
+  // This defines how much the effect impacts.
+  float distortion = smoothstep(uDistortionThickness, 1.0, 1.0 - abs(position.y+uDistortionPosition))*uDistortionAmount;
 
-  // Make if fatter using `uDistortionPosition`
-  float distortion = smoothstep(0.5, 1.0, 1.0 - abs(position.y+uDistortionPosition))*uDistortionAmount;
-  // pos.xz *= 1.0 + distortion;
-
+  // Get the local coordinates of each triangle.
   vec3 localPos = pos - aCentroid;
+
+  // Random value used to rotate and position each triangle.
   float rand = Hash21(aCentroid.xy) + Hash21(aCentroid.yz);
+
+  // Rotate the triangles around all the axis
   localPos.xz *= rotate2D(distortion * 15.0 * uDistortionPosition * rand);
   localPos.xy *= rotate2D(distortion * 35.0 * uDistortionPosition * rand);
   localPos.yz *= rotate2D(distortion * -84.0 * uDistortionPosition * rand);
 
+  // Place the triangles to their original position after having rotated them.
   pos = aCentroid + localPos;
-  // pos += localPos*max(0.0, distortion);
-  // pos.xz *= 1.0 + distortion;
-  pos += aCentroid * rand * distortion;
 
+  // Move outside the triangles based on a random value * the distortion.
+  pos += aCentroid * rand * distortion;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
   vPosition = position.xy;
   vDistortionPosition = uDistortionPosition;
+  vDistortionThickness = uDistortionThickness;
 }

@@ -1,14 +1,14 @@
 import { Scene } from 'three/src/scenes/Scene'
 import { WebGLRenderer } from 'three/src/renderers/WebGLRenderer'
 import { PerspectiveCamera } from 'three/src/cameras/PerspectiveCamera'
-import { BoxBufferGeometry } from 'three/src/geometries/BoxBufferGeometry'
+// import { BoxBufferGeometry } from 'three/src/geometries/BoxBufferGeometry'
 import { ShaderMaterial } from 'three/src/materials/ShaderMaterial'
 import { Color } from 'three/src/math/Color'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { Clock } from 'three/src/core/clock'
-import { Mesh } from 'three/src/objects/Mesh'
+// import { Mesh } from 'three/src/objects/Mesh'
 import { BufferAttribute } from 'three/src/core/BufferAttribute'
 
 import Tweakpane from 'tweakpane'
@@ -25,26 +25,20 @@ class App {
     this._createCamera()
     this._createRenderer()
     this._addListeners()
-    this._createWireframeBox()
-    this._createFillBox()
+    // this._createWireframeBox()
+    // this._createFillBox()
     this._createControls()
     this._createDebugPanel()
     this._createClock()
 
-    // this._loadModel().then(() => {
-    //   console.log(this)
-    //   this.renderer.setAnimationLoop(() => {
-    //     this._update()
-    //     this._render()
-    //   })
-    // })
+    this._loadModel().then(() => {
+      this.renderer.setAnimationLoop(() => {
+        this._update()
+        this._render()
+      })
+    })
 
     console.log(this)
-
-    this.renderer.setAnimationLoop(() => {
-      this._update()
-      this._render()
-    })
   }
 
   destroy() {
@@ -53,11 +47,11 @@ class App {
   }
 
   _update() {
-    this.wireframeBox.material.uniforms.uTime.value = this.clock.getElapsedTime()
-    this.wireframeBox.material.uniformsNeedUpdate = true
+    this.fillMesh.material.uniforms.uTime.value = this.clock.getElapsedTime()
+    this.fillMesh.material.uniformsNeedUpdate = true
 
-    this.fillBox.material.uniforms.uTime.value = this.clock.getElapsedTime()
-    this.fillBox.material.uniformsNeedUpdate = true
+    this.wireframeMesh.material.uniforms.uTime.value = this.clock.getElapsedTime()
+    this.wireframeMesh.material.uniformsNeedUpdate = true
   }
 
   _render() {
@@ -90,8 +84,14 @@ class App {
 
   _createBox() {
     const geom = new BoxBufferGeometry(1, 1, 1, 20, 20, 20).toNonIndexed()
-    const centroid = new Float32Array(geom.getAttribute('position').count*3)
-    const position = geom.getAttribute('position').array
+    this._setGeometryCentroid(geom)
+
+    return geom
+  }
+
+  _setGeometryCentroid(geometry) {
+    const centroid = new Float32Array(geometry.getAttribute('position').count*3)
+    const position = geometry.getAttribute('position').array
 
     for (let i = 0; i < centroid.length; i+=9) {
       const x = (position[i] + position[i+3] + position[i+6]) / 3
@@ -103,28 +103,28 @@ class App {
       centroid.set([x, y, z], i+6);
     }
 
-    geom.setAttribute('aCentroid', new BufferAttribute(centroid, 3, false))
-
-    return geom
+    geometry.setAttribute('aCentroid', new BufferAttribute(centroid, 3, false))
   }
 
-  _createWireframeBox() {
-    const geom = this._createBox()
-    const mat = this._getWireframeMaterial()
+  // _createWireframeBox() {
+  //   const geom = this._createBox()
+  //   const mat = this._getWireframeMaterial()
 
-    this.wireframeBox = new Mesh(geom, mat)
-    // this.wireframeBox.position.x = -1
-    this.scene.add(this.wireframeBox)
-  }
+  //   this.wireframeBox = new Mesh(geom, mat)
+  //   this.wireframeBox.position.x = -1
+  //   this.wireframeBox.position.z = -1
+  //   this.scene.add(this.wireframeBox)
+  // }
 
-  _createFillBox() {
-    const geom = this._createBox()
-    const mat = this._getFillMaterial()
+  // _createFillBox() {
+  //   const geom = this._createBox()
+  //   const mat = this._getFillMaterial()
 
-    this.fillBox = new Mesh(geom, mat)
-    // this.fillBox.position.x = 1
-    this.scene.add(this.fillBox)
-  }
+  //   this.fillBox = new Mesh(geom, mat)
+  //   this.fillBox.position.x = -1
+  //   this.fillBox.position.z = -1
+  //   this.scene.add(this.fillBox)
+  // }
 
   _getWireframeMaterial() {
     return new ShaderMaterial({
@@ -141,6 +141,10 @@ class App {
         uDistortionAmount: {
           type: '1f',
           value: 0.2
+        },
+        uDistortionThickness: {
+          type: '1f',
+          value: 0.5
         },
         uTime: {
           type: '1f',
@@ -166,6 +170,10 @@ class App {
           type: '1f',
           value: 0.2
         },
+        uDistortionThickness: {
+          type: '1f',
+          value: 0.5
+        },
         uTime: {
           type: '1f',
           value: 0
@@ -186,12 +194,26 @@ class App {
 
       this.loader.setDRACOLoader(dracoLoader)
 
-      this.loader.load('./model.glb', gltf => {
-        this.scene.add(gltf.scene)
+      // Model URL: https://www.turbosquid.com/it/3d-models/3d-stan-lee-1348558
+      this.loader.load('./stan.glb', gltf => {
+        this.wireframeMesh = gltf.scene.children[0].clone()
+        this.fillMesh = gltf.scene.children[0].clone()
 
-        this.mesh = gltf.scene.children[0]
+        const geom = this.wireframeMesh.geometry.toNonIndexed()
 
-        this.mesh.material = this._getWireframeMaterial()
+        this._setGeometryCentroid(geom)
+
+        this.wireframeMesh.geometry = geom
+        this.fillMesh.geometry = geom
+
+        this.wireframeMesh.position.x = 0
+        this.fillMesh.position.x = 0
+
+        this.wireframeMesh.material = this._getWireframeMaterial()
+        this.fillMesh.material = this._getFillMaterial()
+
+        this.scene.add(this.fillMesh)
+        this.scene.add(this.wireframeMesh)
 
         resolve()
       })
@@ -227,23 +249,32 @@ class App {
 
     params = {
       distortionPosition: 0,
-      distortionAmount: 0.2
+      distortionAmount: 0.2,
+      distortionThickness: 0.5
     }
 
     distortionFolder.addInput(params, 'distortionPosition', { label: 'Position', min: -1, max: 1 }).on('change', value => {
-      this.wireframeBox.material.uniforms.uDistortionPosition.value = value
-      this.wireframeBox.material.uniformsNeedUpdate = true
+      this.fillMesh.material.uniforms.uDistortionPosition.value = value
+      this.fillMesh.material.uniformsNeedUpdate = true
 
-      this.fillBox.material.uniforms.uDistortionPosition.value = value
-      this.fillBox.material.uniformsNeedUpdate = true
+      this.wireframeMesh.material.uniforms.uDistortionPosition.value = value
+      this.wireframeMesh.material.uniformsNeedUpdate = true
     })
 
     distortionFolder.addInput(params, 'distortionAmount', { label: 'Amount', min: -0.5, max: 0.5 }).on('change', value => {
-      this.wireframeBox.material.uniforms.uDistortionAmount.value = value
-      this.wireframeBox.material.uniformsNeedUpdate = true
+      this.fillMesh.material.uniforms.uDistortionAmount.value = value
+      this.fillMesh.material.uniformsNeedUpdate = true
 
-      this.fillBox.material.uniforms.uDistortionAmount.value = value
-      this.fillBox.material.uniformsNeedUpdate = true
+      this.wireframeMesh.material.uniforms.uDistortionAmount.value = value
+      this.wireframeMesh.material.uniformsNeedUpdate = true
+    })
+
+    distortionFolder.addInput(params, 'distortionThickness', { label: 'Thickness', min: 0, max: 1 }).on('change', value => {
+      this.fillMesh.material.uniforms.uDistortionThickness.value = value
+      this.fillMesh.material.uniformsNeedUpdate = true
+
+      this.wireframeMesh.material.uniforms.uDistortionThickness.value = value
+      this.wireframeMesh.material.uniformsNeedUpdate = true
     })
   }
 
