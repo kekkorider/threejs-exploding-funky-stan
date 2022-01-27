@@ -5055,10 +5055,10 @@ terser@^4.8.0:
     source-map "~0.6.1"
     source-map-support "~0.5.12"
 
-three@^0.123.0:
-  version "0.123.0"
-  resolved "https://registry.yarnpkg.com/three/-/three-0.123.0.tgz#3bb6d8f908a432eb7cd450f7eab6dd40fde53085"
-  integrity sha512-KNnx/IbilvoHRkxOtL0ouozoDoElyuvAXhFB21RK7F5IPWSmqyFelICK6x3hJerLNSlAdHxR0hkuvMMhH9pqXg==
+three@^0.137.0:
+  version "0.137.0"
+  resolved "https://registry.yarnpkg.com/three/-/three-0.137.0.tgz#0ebd6ba66637a332c31f234bcdd35aeec071a6e3"
+  integrity sha512-rzSDhia6cU35UCy6y+zEEws6vSgytfHqFMSaBvUcySgzwvDO6vETyswtSNi/+aVqJw8WLMwyT1mlQQ1T/dxxOA==
 
 through2@^0.6.3:
   version "0.6.5"
