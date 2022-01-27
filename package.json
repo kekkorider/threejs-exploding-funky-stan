@@ -17,7 +17,7 @@
     "sass": "^1.30.0"
   },
   "dependencies": {
-    "three": "^0.123.0",
+    "three": "^0.137.0",
     "tweakpane": "^1.5.7"
   }
 }
